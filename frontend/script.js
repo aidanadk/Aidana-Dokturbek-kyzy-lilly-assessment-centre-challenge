@@ -18,19 +18,27 @@
 //
 // Stretch: add an average-price endpoint in backend/main.py and call it here.
 
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = 'http://localhost:8000'
 
 // DOM elements (already present in index.html - no layout work needed).
-const resultsEl = document.getElementById("results");
-const loadingEl = document.getElementById("loading");
-const errorEl = document.getElementById("error");
+const resultsEl = document.getElementById('results')
+const loadingEl = document.getElementById('loading')
+const errorEl = document.getElementById('error')
 
 /**
  * TODO (Core task 1): fetch the list of medicines from /medicines.
  * Return the medicines array. Surface network/HTTP errors so the caller can show them.
  */
 async function fetchMedicines() {
-    // TODO: fetch(`${BASE_URL}/medicines`), check response.ok, return the data.
+  // TODO: fetch(`${BASE_URL}/medicines`), check response.ok, return the data.
+  const response = await fetch(`${BASE_URL}/medicines`)
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch medicines: ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data
 }
 
 /**
@@ -40,9 +48,29 @@ async function fetchMedicines() {
  * TODO: clear the #error area on success.
  */
 function renderMedicines(data) {
-    // TODO: build a table (the .results styles expect a <table>), iterate the
-    // records, and render each row safely. Use the .invalid class to flag bad
-    // values if you like.
+  errorEl.hidden = true
+  resultsEl.innerHTML = ''
+  
+  const table = document.createElement('table')
+  table.innerHTML = '<tr><th>Name</th><th>Price</th></tr>'
+
+  for (const med of data.medicines) {
+    let name = med.name
+    if (!name) {
+      name = 'Unknown name'
+    }
+
+    let price = 'Price unavailable'
+    if (med.price !== null && med.price !== undefined) {
+      price = '$' + Number(med.price)
+    }
+
+    const row = table.insertRow()
+    row.insertCell().textContent = name
+    row.insertCell().textContent = price
+  }
+
+  resultsEl.appendChild(table)
 }
 
 /**
@@ -52,15 +80,27 @@ function renderMedicines(data) {
  * render the data and clear #error. Show/hide the #loading area while working.
  */
 async function fetchUnreliable() {
-    // TODO: implement the retry loop here.
+  // TODO: implement the retry loop here.
 }
 
 // ---- Button wiring (already works - no need to change) ----
-document.getElementById("load-medicines").addEventListener("click", async () => {
-    // TODO: call fetchMedicines() then renderMedicines(data),
-    // showing #loading and clearing #error appropriately.
-});
+document
+  .getElementById('load-medicines')
+  .addEventListener('click', async () => {
+    loadingEl.hidden = false
+    try {
+      const data = await fetchMedicines()
+      renderMedicines(data)
+      loadingEl.hidden = true 
+    } catch (err) {
+      errorEl.textContent = `Could not load medicines. (${err.message})`
+      errorEl.hidden = false
+      loadingEl.hidden = true 
+    }
+  })
 
-document.getElementById("load-unreliable").addEventListener("click", async () => {
+document
+  .getElementById('load-unreliable')
+  .addEventListener('click', async () => {
     // TODO: call fetchUnreliable().
-});
+  })
